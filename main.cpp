@@ -60,11 +60,11 @@ void DrawExtGraph(int x, int y, int w, int h, int picHandle) {
 //-------------------------------------------------------------------------------------------------------------------
 //寿司
 enum SushiNeta {
-	syari,
-	tamago,
-	sarmon,
+	syari,		//シャリ
+	tamago,		//玉子
+	sarmon,		//サーモン
 
-	non,
+	non,		//無効
 };
 struct Sushi
 {
