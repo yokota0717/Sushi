@@ -20,17 +20,24 @@ const int	SCREEN_WIDTH = 800,
 
 //-------------------------------------------------------------------------------------------------------------------
 //マウス準備
-int Mouse;
+int Mouse, preMouse;
 int mouseX, mouseY;
 //-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
 //色
 int white = GetColor(255, 255, 255);
+int red = GetColor(255, 0, 0);
 //画像ハンドル
-int sushiPic[12];
+int netaPic[9];
+int sushiPic[9];
 //クリック回数カウンター
 int clickNum;
+//作った寿司カウンター
+int makeCnt;
+////クリックしたネタ保管用
+//int clickNeta;
+
 
 //座標構造体
 struct Pos {
@@ -53,22 +60,10 @@ void DrawExtGraph(int x, int y, int w, int h, int picHandle) {
 //-------------------------------------------------------------------------------------------------------------------
 //寿司
 enum SushiNeta {
-	maguro,
-	toro,
+	syari,
 	tamago,
-	inari,
-	ika,
 	sarmon,
-	buri,
-	tako,
-	ebi,
-	akagai,
-	ikura,
-	uni,
-	shimesaba,
-	kanpachi,
-	tekka,
-	kappa,
+
 	non,
 };
 struct Sushi
@@ -77,53 +72,98 @@ struct Sushi
 	SushiNeta neta;
 };
 
-Sushi sushi[12];		//元になる寿司ネタ
-Sushi order[12];		//作る寿司ネタ
+Sushi sushi[9];		//元になる寿司ネタ
+Sushi order[9];		//作る寿司ネタ
+Sushi kansei[9];	//完成形寿司
 //-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
 //関数
 void initSushi(Sushi& s, int i) {
-	s.pos.x = i % 4;
-	s.pos.y = i / 4;
+	s.pos.x = i % 3;
+	s.pos.y = i / 3;
 	switch (i) {
-	case 0:		s.neta = maguro;	break;
-	case 1:		s.neta = toro;		break;
-	case 2:		s.neta = tamago;	break;
-	case 3:		s.neta = inari;		break;
-	case 4:		s.neta = ika;		break;
-	case 5:		s.neta = sarmon;	break;
-	case 6:		s.neta = buri;		break;
-	case 7:		s.neta = tako;		break;
-	case 8:		s.neta = ebi;		break;
-	case 9:		s.neta = akagai;	break;
-	case 10:	s.neta = ikura;		break;
-	case 11:	s.neta = uni;		break;
+	case 0:		s.neta = syari;		break;
+	case 1:		s.neta = tamago;	break;
+	case 2:		s.neta = sarmon;	break;
 	default:	s.neta = non;
 	}
 }
 void renderSushi(Sushi& s) {
 	if (s.neta == non) return;
-	DrawExtGraph(s.pos.x * 90, s.pos.y * 80, 80, 65, sushiPic[s.neta]);
+	DrawExtGraph(s.pos.x * 80, s.pos.y * 80, 80, 80, netaPic[s.neta]);
 }
 
 void initOrder(Sushi& s, int i) {
-	s.pos.x = i % 4;
-	s.pos.y = i / 4;
+	s.pos.x = i % 3;
+	s.pos.y = i / 3;
 	s.neta = non;
 }
 void renderOrder(Sushi& s) {
 	if (s.neta == non) return;
-	DrawExtGraph(420 + s.pos.x * 90, s.pos.y * 80, 80, 65, sushiPic[s.neta]);
+	DrawExtGraph(350 + s.pos.x * 80, s.pos.y * 80, 80, 80, netaPic[s.neta]);
+}
+
+void initKansei(Sushi& s, int i) {
+	s.pos.x = 5 + 90 * i;
+	s.pos.y = 400;
+	s.neta = non;
+}
+void renderKansei(Sushi& s) {
+	if (s.neta == non) return;
+	DrawExtGraph(s.pos.x, s.pos.y, 80, 80, sushiPic[s.neta]);
+	DrawFrame(s.pos.x, s.pos.y, 80, 80);
 }
 
 void clickSushi() {
-	if (Mouse & MOUSE_INPUT_LEFT) {
+	if (((Mouse & MOUSE_INPUT_LEFT)!=0)&&((preMouse&MOUSE_INPUT_LEFT)==0)) {	//左クリックされた瞬間なら
 		Pos mousePos;
-		mousePos.x = mouseX % 80 - 10;
-		mousePos.y = mouseY % 80 - 15;
+		mousePos.x = mouseX / 80;
+		mousePos.y = mouseY / 80;
+		if (mousePos.x == 0 && mousePos.y == 0) {	//シャリをクリック
+			order[clickNum].neta = syari;
+			clickNum++;
+		}
+		else if (mousePos.x == 1 && mousePos.y == 0) {	//玉子をクリック
+			order[clickNum].neta = tamago;
+			clickNum++;
+		}
+		else if (mousePos.x == 2 && mousePos.y == 0) {	//サーモンをクリック
+			order[clickNum].neta = sarmon;
+			clickNum++;
+		}
 	}
+}
 
+void ClearNeta() {
+	for (int i = 0; i < 9; ++i) {
+		order[i].neta = non;
+	}
+	clickNum = 0;
+}
+void ClearSushi() {
+	for (int i = 0; i < 9; ++i) {
+		kansei[i].neta = non;
+	}
+	makeCnt = 0;
+}
+
+void MakeSushi() {
+	if (((Mouse & MOUSE_INPUT_LEFT) != 0) && ((preMouse&MOUSE_INPUT_LEFT) == 0)) {
+		if (mouseX >= 680 && mouseX < 780 && mouseY >= 0 && mouseY < 100) {		//Make矩形内をクリック
+			if (order[0].neta == syari && order[1].neta == syari) {
+				if (order[2].neta == tamago) {
+					kansei[makeCnt].neta = tamago;
+					makeCnt++;
+				}
+				else if(order[2].neta == sarmon){
+					kansei[makeCnt].neta = sarmon;
+					makeCnt++;
+				}
+			}
+			ClearNeta();
+		}
+	}
 }
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -137,20 +177,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ChangeWindowMode(TRUE), SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT), DxLib_Init(), SetDrawScreen(DX_SCREEN_BACK); //ウィンドウモード変更と初期化と裏画面設定
 
 
-	LoadDivGraph("./resource/graph/sushi.jpg", 16, 4, 4, 113, 84, sushiPic);
+	LoadDivGraph("./resource/graph/neta.jpg", 9, 3, 3, 256, 256, netaPic);
+	LoadDivGraph("./resource/graph/kansei.png", 9, 3, 3, 256, 256, sushiPic);
 
 	clickNum = 0;
+	makeCnt = 0;
+	Mouse = GetMouseInput();
 
 	int sushiTable[] = {
-		0,1,2,3,
-		4,5,6,7,
-		8,9,10,11,
+		0,1,2,
+		3,4,5,
+		6,7,8,
 	};
-	int orderTable[12] = {};
+	int orderTable[9] = {};
 
-	for (int i = 0; i < 12; ++i) {
+	for (int i = 0; i < 9; ++i) {
 		initSushi(sushi[i], i);
 		initOrder(order[i], i);
+		initKansei(kansei[i], i);
 	}
 
 	//-------------------------------------------------------------------------------------------------------------------
@@ -158,7 +202,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//-------------------------------------------------------------------------------------------------------------------
 	while (ProcessLoop() == 0) {	
 		Keyboard_Update();
+		preMouse = Mouse;
 		Mouse = GetMouseInput();
+		
 		GetMousePoint(&mouseX, &mouseY);
 
 		//int sushiNum = 0;
@@ -170,16 +216,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//}
 
 		clickSushi();
+		MakeSushi();
 
-		for (int i = 0; i < 12; ++i) {
+		if (Mouse&MOUSE_INPUT_RIGHT)
+			ClearSushi();
+
+		for (int i = 0; i < 9; ++i) {
 			renderSushi(sushi[i]);
 			renderOrder(order[i]);
+			renderKansei(kansei[i]);
 		}
-		for (int y = 0; y < 3; ++y) {
-			for (int x = 0; x < 4; ++x) {
-				DrawFrame(420 + 85 * x, 10 + 85 * y, 80, 80);
-			}
-		}
+		DrawBox(680, 0, 780, 100, white, true);
+		DrawFormatString(720, 50, red, "Make");
+		//for (int y = 0; y < 3; ++y) {
+		//	for (int x = 0; x < 3; ++x) {
+		//		DrawFrame(420 + 90 * x, 90 * y, 80, 80);
+		//	}
+		//}
 		if (Keyboard_Get(KEY_INPUT_ESCAPE) == 1) break;  //Escキーが押されたら終了
 
 	}
